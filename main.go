@@ -1,23 +1,16 @@
 package engine // import "m7s.live/engine/v4"
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net"
-	"net/http"
 	"os"
 	"path/filepath"
 	"reflect"
-	"runtime"
 	"strings"
 	"time"
 
-	"github.com/denisbrodbeck/machineid"
-	"github.com/google/uuid"
-	. "github.com/logrusorgru/aurora"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/yaml.v3"
@@ -55,7 +48,7 @@ func init() {
 
 // Run 启动Monibuca引擎，传入总的Context，可用于关闭所有
 func Run(ctx context.Context, configFile string) (err error) {
-	id, _ := machineid.ProtectedID("monibuca")
+	// id, _ := machineid.ProtectedID("monibuca")
 	SysInfo.StartTime = time.Now()
 	SysInfo.Version = Engine.Version
 	Engine.Context = ctx
@@ -72,7 +65,7 @@ func Run(ctx context.Context, configFile string) (err error) {
 		log.Error("create dir .m7s error:", err)
 		return
 	}
-	log.Info("Ⓜ starting engine:", Blink(Engine.Version))
+	log.Info("starting engine:", Engine.Version)
 	var cg config.Config
 	if ConfigRaw != nil {
 		if err = yaml.Unmarshal(ConfigRaw, &cg); err == nil {
@@ -131,19 +124,19 @@ func Run(ctx context.Context, configFile string) (err error) {
 		}
 		plugin.assign()
 	}
-	UUID := uuid.NewString()
-	reportTimer := time.NewTicker(time.Minute)
-	contentBuf := bytes.NewBuffer(nil)
-	req, _ := http.NewRequestWithContext(ctx, http.MethodPost, "https://console.monibuca.com/report", nil)
-	req.Header.Set("Content-Type", "application/json")
+	// UUID := uuid.NewString()
+	// reportTimer := time.NewTicker(time.Minute)
+	// contentBuf := bytes.NewBuffer(nil)
+	// req, _ := http.NewRequestWithContext(ctx, http.MethodPost, "https://console.monibuca.com/report", nil)
+	// req.Header.Set("Content-Type", "application/json")
 	version := Engine.Version
 	if ver, ok := ctx.Value("version").(string); ok && ver != "" && ver != "dev" {
 		version = ver
 	}
 	if EngineConfig.LogLang == "zh" {
-		log.Info("monibuca 引擎版本：", version, Green(" 启动成功"))
+		log.Info("monibuca 引擎版本：", version, " 启动成功")
 	} else {
-		log.Info("monibuca", version, Green(" start success"))
+		log.Info("monibuca", version, " start success")
 	}
 	var enabledPlugins, disabledPlugins []string
 	for _, plugin := range plugins {
@@ -160,39 +153,39 @@ func Run(ctx context.Context, configFile string) (err error) {
 		fmt.Print("enabled plugins：")
 	}
 	for _, plugin := range enabledPlugins {
-		fmt.Print(Colorize(" "+plugin+" ", BlackFg|GreenBg|BoldFm), " ")
+		fmt.Print(" "+plugin+" ", " ")
 	}
 	fmt.Println()
 	if EngineConfig.LogLang == "zh" {
-		fmt.Print("已禁用的插件：")
+		fmt.Print("已禁用的插件: ")
 	} else {
-		fmt.Print("disabled plugins：")
+		fmt.Print("disabled plugins: ")
 	}
 	for _, plugin := range disabledPlugins {
-		fmt.Print(Colorize(" "+plugin+" ", BlackFg|RedBg|CrossedOutFm), " ")
+		fmt.Print(" "+plugin+" ", " ")
 	}
 	fmt.Println()
-	fmt.Println(Bold(Cyan("官网地址: ")), Yellow("https://m7s.live"))
-	fmt.Println(Bold(Cyan("启动工程: ")), Yellow("https://github.com/langhuihui/monibuca"))
-	fmt.Println(Bold(Cyan("使用文档: ")), Yellow("https://m7s.live/guide/introduction.html"))
-	fmt.Println(Bold(Cyan("开发文档: ")), Yellow("https://m7s.live/devel/startup.html"))
-	fmt.Println(Bold(Cyan("视频教程: ")), Yellow("https://space.bilibili.com/328443019/channel/collectiondetail?sid=514619"))
-	fmt.Println(Bold(Cyan("远程界面: ")), Yellow("https://console.monibuca.com"))
-	rp := struct {
-		UUID     string `json:"uuid"`
-		Machine  string `json:"machine"`
-		Instance string `json:"instance"`
-		Version  string `json:"version"`
-		OS       string `json:"os"`
-		Arch     string `json:"arch"`
-	}{UUID, id, EngineConfig.GetInstanceId(), version, runtime.GOOS, runtime.GOARCH}
-	json.NewEncoder(contentBuf).Encode(&rp)
-	req.Body = ioutil.NopCloser(contentBuf)
+	// fmt.Println(Bold(Cyan("官网地址: ")), Yellow("https://m7s.live"))
+	// fmt.Println(Bold(Cyan("启动工程: ")), Yellow("https://github.com/langhuihui/monibuca"))
+	// fmt.Println(Bold(Cyan("使用文档: ")), Yellow("https://m7s.live/guide/introduction.html"))
+	// fmt.Println(Bold(Cyan("开发文档: ")), Yellow("https://m7s.live/devel/startup.html"))
+	// fmt.Println(Bold(Cyan("视频教程: ")), Yellow("https://space.bilibili.com/328443019/channel/collectiondetail?sid=514619"))
+	// fmt.Println(Bold(Cyan("远程界面: ")), Yellow("https://console.monibuca.com"))
+	// rp := struct {
+	// 	UUID     string `json:"uuid"`
+	// 	Machine  string `json:"machine"`
+	// 	Instance string `json:"instance"`
+	// 	Version  string `json:"version"`
+	// 	OS       string `json:"os"`
+	// 	Arch     string `json:"arch"`
+	// }{UUID, id, EngineConfig.GetInstanceId(), version, runtime.GOOS, runtime.GOARCH}
+	// json.NewEncoder(contentBuf).Encode(&rp)
+	// req.Body = ioutil.NopCloser(contentBuf)
 	if EngineConfig.Secret != "" {
 		EngineConfig.OnEvent(ctx)
 	}
-	var c http.Client
-	c.Do(req)
+	// var c http.Client
+	// c.Do(req)
 	for {
 		select {
 		case event := <-EventBus:
@@ -212,11 +205,11 @@ func Run(ctx context.Context, configFile string) (err error) {
 			}
 		case <-ctx.Done():
 			return
-		case <-reportTimer.C:
-			contentBuf.Reset()
-			contentBuf.WriteString(fmt.Sprintf(`{"uuid":"`+UUID+`","streams":%d}`, len(Streams.Map)))
-			req.Body = ioutil.NopCloser(contentBuf)
-			c.Do(req)
+			// case <-reportTimer.C:
+			// 	contentBuf.Reset()
+			// 	contentBuf.WriteString(fmt.Sprintf(`{"uuid":"`+UUID+`","streams":%d}`, len(Streams.Map)))
+			// 	// req.Body = ioutil.NopCloser(contentBuf)
+			// 	// c.Do(req)
 		}
 	}
 }
